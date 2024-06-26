@@ -35,6 +35,7 @@ import {
   groupEventsByMonth,
 } from '@/components/cards/EventCard';
 import SlotDates from '@/components/calendar/SlotDate';
+import { formatUTCTimezone } from '@/utils';
 
 const queryClient = new QueryClient();
 
@@ -185,21 +186,7 @@ const Home: React.FC = () => {
   const getEventsByDate = async () => {
     try {
       if (selectedDate) {
-        let currentDate = new Date(selectedDate.format('YYYY-MM-DDTHH:mm:ss[Z]'));
-
-        const timeDiff = selectedDate.utcOffset();
-        if (timeDiff < 0) {
-          currentDate = new Date(new Date(currentDate.getTime() + (24 * 60 * 60 * 1000)).getTime() - (24 * 60 * 60 * 1000 + timeDiff * 60 * 1000));
-        } else {
-          currentDate = new Date(new Date(currentDate.getTime() - (24 * 60 * 60 * 1000)).getTime() - (timeDiff * 60 * 1000))
-        }
-        const utcYear = currentDate.getFullYear();
-        const uctMM = String(currentDate.getMonth() + 1).length === 1 ? `0${currentDate.getMonth() + 1}` : currentDate.getMonth() + 1;
-        const utcDD = String(currentDate.getDate() + 1).length === 1 ? `0${currentDate.getDate() + 1}` : currentDate.getDate() + 1;
-        const utcHH = String(currentDate.getHours()).length === 1 ? `0${currentDate.getHours()}` : currentDate.getHours();
-        const utcMM = String(currentDate.getMinutes()).length === 1 ? `0${currentDate.getMinutes()}` : currentDate.getMinutes();
-        const utcSS = String(currentDate.getSeconds()).length === 1 ? `0${currentDate.getSeconds()}` : currentDate.getSeconds();
-        console.log('selectedDate: ', selectedDate.format('YYYY-MM-DDTHH:mm:ss[Z]'), `${utcYear}-${uctMM}-${utcDD}T${utcHH}:${utcMM}:${utcSS}Z`)
+        const convertedDate = formatUTCTimezone(selectedDate);
         const getEventsByDate_QUERY = `
           query ($input:EventFiltersInput!) {
           eventIndex(filters:$input, first: 20){
@@ -238,7 +225,7 @@ const Home: React.FC = () => {
             input: {
               where: {
                 startTime: {
-                  equalTo: `${utcYear}-${uctMM}-${utcDD}T${utcHH}:${utcMM}:${utcSS}Z`,
+                  equalTo: convertedDate,
                 },
               },
             },
@@ -249,7 +236,6 @@ const Home: React.FC = () => {
           const fetchedEvents: Event[] = eventData.eventIndex.edges.map(
             (edge) => edge.node,
           );
-          console.log('fetchEvents: ', fetchedEvents)
           setEvents(fetchedEvents);
         } else {
           console.error('Invalid data structure:', response.data);
@@ -322,7 +308,6 @@ const Home: React.FC = () => {
   }
 
   const handleMonthChange = (date: Dayjs) => {
-    console.log('date: ', date.endOf('month').toISOString());
     setDateForCalendar(date);
   };
 
@@ -572,7 +557,6 @@ const Home: React.FC = () => {
                         <ZuCalendar
                           value={selectedDate}
                           onChange={(val) => {
-                            console.log('val: ', val);
                             setSelectedDate(val)
                           }}
                           slots={{

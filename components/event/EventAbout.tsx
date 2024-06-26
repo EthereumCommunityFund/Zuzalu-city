@@ -18,7 +18,6 @@ const EventAbout = ({ description }: EventAboutTypes) => {
       return false;
     }
   }
-  console.log("showmore", showMore)
   return (
     <Stack bgcolor="#292929" padding="10px" borderRadius="10px">
       <Stack padding="10px" spacing="20px">
@@ -28,17 +27,18 @@ const EventAbout = ({ description }: EventAboutTypes) => {
         <Stack>
           <TextEditor
             holder='event-description'
+            readonly={true}
             value={JSON.parse(description.replaceAll('\\"', '"'))}
             showMore={showMore}
           />
         </Stack>
       </Stack>
       <ZuButton
-        startIcon={!showMore ? <ChevronDownIcon size={4} /> : <ChevronUpIcon size={4} />}
+        startIcon={showMore ? <ChevronDownIcon size={4} /> : <ChevronUpIcon size={4} />}
         sx={{ backgroundColor: '#313131', width: '100%' }}
         onClick={() => setShowMore(prev => !prev)}
       >
-        {!showMore ? "Show More" : "Show Less"}
+        {showMore ? "Show More" : "Show Less"}
       </ZuButton>
     </Stack>
   );
