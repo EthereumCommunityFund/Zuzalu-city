@@ -4,12 +4,12 @@ import OverviewButton from './OverviewButton';
 import { Event } from '@/types';
 import { Anchor, Session, SessionData, ProfileEdge, Profile } from '@/types';
 import { PlusCircleIcon } from '@/components/icons';
-import { List } from '@/app/spaces/[spaceid]/events/[eventid]/tabs/Sessions';
 import { useCeramicContext } from '@/context/CeramicContext';
 import { useParams } from 'next/navigation';
 import dayjs, { Dayjs } from 'dayjs';
 import { OutputData } from '@editorjs/editorjs';
 import { QRReader } from '@/components/modals/QRScanModal/QRReader';
+import { supabase } from '@/utils/supabase/client';
 
 interface PropTypes {
   event?: Event
@@ -54,6 +54,17 @@ const OverviewHeader = ({ event }: PropTypes) => {
   const toggleDrawer = (anchor: Anchor, open: boolean) => {
     setState({ ...state, [anchor]: open });
   };
+
+  const getSession = async () => {
+    try {
+      const { data } = await supabase.from('sessions').select('*').eq('eventId', eventId);
+      if (data) {
+        console.log(data);
+      }
+    } catch (err) {
+      console.log(err)
+    }
+  }
 
   const getPeople = async () => {
     try {
@@ -127,75 +138,100 @@ const OverviewHeader = ({ event }: PropTypes) => {
       return;
     }
 
-    if (person) {
-      const update = await composeClient.executeQuery(`
-      mutation {
-        createSession(
-          input: {
-            content: {
-              title: "${sessionName}",
-              createdAt: "${dayjs().format('YYYY-MM-DDTHH:mm:ss[Z]')}",
-              startTime: "${sessionStartTime?.format('YYYY-MM-DDTHH:mm:ss[Z]')}",
-              endTime: "${sessionEndTime?.format('YYYY-MM-DDTHH:mm:ss[Z]')}",
-              profileId: "${profileId}",
-              eventId: "${params.eventid.toString()}",
-              tags: "${sessionTags.join(',')}",
-              status: "${sessoinStatus}",
-              format: "person",
-              track: "${sessionTrack}",
-              gated: "${sessionGated}",
-              description: "${strDesc}"
-            }
-          }
-        ) {
-          document {
-            id
-            title
-            createdAt
-            startTime
-            endTime
-            eventId
-            profileId
-          }
-        }
-      }
-      `);
-      toggleDrawer('right', false);
-    } else {
-      const update = await composeClient.executeQuery(`
-      mutation {
-        createSession(
-          input: {
-            content: {
-              title: "${sessionName}",
-              createdAt: "${dayjs().format('YYYY-MM-DDTHH:mm:ss[Z]')}",
-              startTime: "${sessionStartTime?.format('YYYY-MM-DDTHH:mm:ss[Z]')}",
-              endTime: "${sessionEndTime?.format('YYYY-MM-DDTHH:mm:ss[Z]')}",
-              profileId: "${profileId}",
-              eventId: "${params.eventid.toString()}",
-              tags: "${sessionTags.join(',')}",
-              status: "${sessoinStatus}",
-              format: "online",
-              track: "${sessionTrack}",
-              gated: "${sessionGated}",
-              description: "${strDesc}"
-            }
-          }
-        ) {
-          document {
-            id
-            title
-            createdAt
-            startTime
-            endTime
-            eventId
-            profileId
-          }
-        }
-      }
-      `);
-      toggleDrawer('right', false);
-    }
+    const format = person ? 'person' : 'online';
+
+    const { data } = await supabase.from('sessions').insert({
+      title: sessionName,
+      description: strDesc,
+      experience_level: sessionExperienceLevel,
+      createdAt: dayjs().format('YYYY-MM-DDTHH:mm:ss[Z]').toString(),
+      startTime: sessionStartTime?.format('YYYY-MM-DDTHH:mm:ss[Z]').toString(),
+      endTime: sessionEndTime?.format('YYYY-MM-DDTHH:mm:ss[Z]').toString(),
+      profileId,
+      eventId,
+      tags: sessionTags.join(','),
+      type: sessionType,
+      status: sessoinStatus,
+      format,
+      track: sessionTrack,
+      gated: sessionGated,
+      timezone: dayjs.tz.guess().toString(),
+      video_url: sessionVideoURL
+    })
+
+    console.log("return data", data);
+    toggleDrawer('right', false);
+    // await getSession();
+
+    // if (person) {
+    //   const update = await composeClient.executeQuery(`
+    //   mutation {
+    //     createSession(
+    //       input: {
+    //         content: {
+    //           title: "${sessionName}",
+    //           createdAt: "${dayjs().format('YYYY-MM-DDTHH:mm:ss[Z]')}",
+    //           startTime: "${sessionStartTime?.format('YYYY-MM-DDTHH:mm:ss[Z]')}",
+    //           endTime: "${sessionEndTime?.format('YYYY-MM-DDTHH:mm:ss[Z]')}",
+    //           profileId: "${profileId}",
+    //           eventId: "${params.eventid.toString()}",
+    //           tags: "${sessionTags.join(',')}",
+    //           status: "${sessoinStatus}",
+    //           format: "person",
+    //           track: "${sessionTrack}",
+    //           gated: "${sessionGated}",
+    //           description: "${strDesc}"
+    //         }
+    //       }
+    //     ) {
+    //       document {
+    //         id
+    //         title
+    //         createdAt
+    //         startTime
+    //         endTime
+    //         eventId
+    //         profileId
+    //       }
+    //     }
+    //   }
+    //   `);
+    //   toggleDrawer('right', false);
+    // } else {
+    //   const update = await composeClient.executeQuery(`
+    //   mutation {
+    //     createSession(
+    //       input: {
+    //         content: {
+    //           title: "${sessionName}",
+    //           createdAt: "${dayjs().format('YYYY-MM-DDTHH:mm:ss[Z]')}",
+    //           startTime: "${sessionStartTime?.format('YYYY-MM-DDTHH:mm:ss[Z]')}",
+    //           endTime: "${sessionEndTime?.format('YYYY-MM-DDTHH:mm:ss[Z]')}",
+    //           profileId: "${profileId}",
+    //           eventId: "${params.eventid.toString()}",
+    //           tags: "${sessionTags.join(',')}",
+    //           status: "${sessoinStatus}",
+    //           format: "online",
+    //           track: "${sessionTrack}",
+    //           gated: "${sessionGated}",
+    //           description: "${strDesc}"
+    //         }
+    //       }
+    //     ) {
+    //       document {
+    //         id
+    //         title
+    //         createdAt
+    //         startTime
+    //         endTime
+    //         eventId
+    //         profileId
+    //       }
+    //     }
+    //   }
+    //   `);
+    //   toggleDrawer('right', false);
+    // }
   };
 
   React.useEffect(() => {
@@ -226,9 +262,9 @@ const OverviewHeader = ({ event }: PropTypes) => {
       </Stack>
       <Stack direction="row" spacing={2}>
         <OverviewButton type={0} onClick={() => toggleDrawer('right', true)} />
-        <OverviewButton type={1} onClick={() => {setShowQRScanner(!showQRScanner)}}/>
+        <OverviewButton type={1} onClick={() => { setShowQRScanner(!showQRScanner) }} />
       </Stack>
-      <SwipeableDrawer
+      {/* <SwipeableDrawer
         hideBackdrop={true}
         sx={{
           '& .MuiDrawer-paper': {
@@ -283,12 +319,12 @@ const OverviewHeader = ({ event }: PropTypes) => {
             toggleDrawer={toggleDrawer}
           />
         }
-      </SwipeableDrawer>
+      </SwipeableDrawer> */}
       {
         showQRScanner && <QRReader />
       }
     </Stack>
-    : <></>
+      : <></>
   );
 };
 

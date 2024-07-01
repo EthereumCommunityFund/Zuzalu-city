@@ -115,6 +115,9 @@ export interface Session {
   description?: string;
   meeting_url?: string;
   experience_level?: string;
+  location?: string;
+  speakers: string;
+  organizers?: string;
 }
 
 export interface SessionEdge {
@@ -129,13 +132,20 @@ export interface SessionData {
 
 export interface Venue {
   id: string;
-  title: string;
+  name: string;
+  eventId: string;
+  tags: string;
+  avatar: string;
+  bookings: string;
 }
 
 export type Profile = {
   id: any;
   username: string;
   avatar?: string;
+  author?: {
+    id: string;
+  }
 };
 export interface ProfileData {
   node: Profile;
